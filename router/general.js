@@ -3,7 +3,6 @@ let books = require("./booksdb.js");
 let isValid = require("./auth_users.js").isValid;
 let users = require("./auth_users.js").users;
 const public_users = express.Router();
-const axios = require('axios');
 
 // Register a new user
 public_users.post("/register", (req,res) => {
@@ -23,51 +22,59 @@ public_users.post("/register", (req,res) => {
   return res.status(200).json({message: "User registered successfully"});
 });
 
-// Task 10: Get the book list available in the shop using async/await with Axios
-public_users.get('/', async function (req, res) {
+// Task 10: Get the book list available in the shop using async/await (Promise style)
+public_users.get('/', async (req, res) => {
   try {
-    const response = await axios.get('http://localhost:5000/');
-    return res.status(200).json(response.data);
+    return res.status(200).json(books);
   } catch (error) {
     return res.status(500).json({ message: "Error fetching books", error: error.message });
   }
 });
 
-// Task 11: Get book details based on ISBN using async/await with Axios
-public_users.get('/isbn/:isbn', async function (req, res) {
-  const isbn = req.params.isbn;
+// Task 11: Get book details based on ISBN using async/await
+public_users.get('/isbn/:isbn', async (req, res) => {
   try {
-    const response = await axios.get(`http://localhost:5000/isbn/${isbn}`);
-    return res.status(200).json(response.data);
+    const isbn = req.params.isbn;
+    const book = books[isbn];
+    if (!book) {
+      return res.status(404).json({ message: "Book not found" });
+    }
+    return res.status(200).json(book);
   } catch (error) {
-    return res.status(404).json({ message: "Book not found", error: error.message });
+    return res.status(500).json({ message: "Error fetching book by ISBN", error: error.message });
   }
 });
 
-// Task 12: Get book details based on author using async/await with Axios
-public_users.get('/author/:author', async function (req, res) {
-  const author = req.params.author;
+// Task 12: Get book details based on author using async/await
+public_users.get('/author/:author', async (req, res) => {
   try {
-    const response = await axios.get(`http://localhost:5000/author/${author}`);
-    return res.status(200).json(response.data);
+    const author = req.params.author;
+    const result = Object.values(books).filter(book => book.author === author);
+    if (result.length === 0) {
+      return res.status(404).json({ message: "No books found for this author" });
+    }
+    return res.status(200).json(result);
   } catch (error) {
-    return res.status(404).json({ message: "No books found for this author", error: error.message });
+    return res.status(500).json({ message: "Error fetching books by author", error: error.message });
   }
 });
 
-// Task 13: Get all books based on title using async/await with Axios
-public_users.get('/title/:title', async function (req, res) {
-  const title = req.params.title;
+// Task 13: Get book details based on title using async/await
+public_users.get('/title/:title', async (req, res) => {
   try {
-    const response = await axios.get(`http://localhost:5000/title/${title}`);
-    return res.status(200).json(response.data);
+    const title = req.params.title;
+    const result = Object.values(books).filter(book => book.title === title);
+    if (result.length === 0) {
+      return res.status(404).json({ message: "No books found with this title" });
+    }
+    return res.status(200).json(result);
   } catch (error) {
-    return res.status(404).json({ message: "No books found with this title", error: error.message });
+    return res.status(500).json({ message: "Error fetching books by title", error: error.message });
   }
 });
 
 // Get book review (can stay synchronous if not required to change)
-public_users.get('/review/:isbn', function (req, res) {
+public_users.get('/review/:isbn', (req, res) => {
   const isbn = req.params.isbn;
   if (books[isbn]) {
     return res.status(200).send(JSON.stringify(books[isbn].reviews, null, 2));
